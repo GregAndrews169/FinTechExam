@@ -207,9 +207,9 @@ address2 = "AIXCHZDQ5Q4MC6KOUVGZOAFIWLG2AAXS5WC35YCFKPQFZSS3KMPDQZTPYU"
 
 # create ASA and extract asset ID
 asset_id_asa = create_asa(private_key2, address2, algod_client)
-# asset_id_asa = "480159984"
 
-# opt-in to ASA
+
+# opt-in to ASA referncing the asset by asset ID
 opt_in_to_asa(private_key1, address1, asset_id_asa, algod_client)
 
 # List assets and assocaited balances of each account prior to the atomic transfer
