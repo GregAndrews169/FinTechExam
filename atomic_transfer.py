@@ -78,7 +78,7 @@ def check_account_balance(address, algod_client):
 
 ########################################################################################################################
 
-############################## Create Account ##############################
+############################## Execution of functions ##############################
 
 
 # Connect to testnet
@@ -100,3 +100,4 @@ check_account_balance(address1, algod_client)
 
 # Check blance on account2
 check_account_balance(address2, algod_client)
+#
