@@ -1,8 +1,9 @@
+########## Module imports ##########
 from algosdk import account
 from algosdk.v2client import algod
 from algosdk import transaction
 from algosdk.atomic_transaction_composer import AtomicTransactionComposer, TransactionWithSigner, AccountTransactionSigner
-
+##########
 
 ############################## Required Functions ############################################################
 
@@ -29,51 +30,6 @@ def create_account():
     print("Your private key:", private_key)
 
     return private_key, address
-
-########## Function to Send Algos from One Account to Another ##########
-
-
-def send_transaction(sender_private_key, sender_address, receiver_address, amount, algod_client):
-    # Get the suggested transaction parameters
-    params = algod_client.suggested_params()
-
-    # Create a payment transaction
-    txn = transaction.PaymentTxn(
-        sender=sender_address,
-        sp=params,
-        receiver=receiver_address,
-        amt=amount
-    )
-
-    # Sign the transaction
-    signed_txn = txn.sign(sender_private_key)
-
-    # Send the transaction
-    txid = algod_client.send_transaction(signed_txn)
-    print(f"Sent transaction with txID: {txid}")
-
-    # Wait for confirmation
-    try:
-        txn_result = transaction.wait_for_confirmation(algod_client, txid, 4)
-        print("Transaction successful.")
-    except Exception as e:
-        print("An error occurred while confirming the transaction.")
-        print(e)
-
-    return txid, txn_result
-
-########## Function to Check Account Balance ##########
-
-
-def check_account_balance(address, algod_client):
-    # Get account information
-    account_info = algod_client.account_info(address)
-
-    # Get the amount of Algos in the account
-    balance = account_info.get('amount')
-    print(f"Account balance of {address}: {balance} microAlgos")
-
-    return balance
 
 ########## Function to Create ASA ##########
 
@@ -155,7 +111,7 @@ def opt_in_to_asa(account_private_key, account_address, asset_id, algod_client):
 
     return txid
 
-########## Function to List all assets ##########
+########## Function to List all assets and assocaited balances in a specific account ##########
 
 
 def list_assets_and_balances(account_address, algod_client):
@@ -237,37 +193,35 @@ def atomic_transfer(algod_client, sender_a_private_key, sender_a_address, sender
 # Connect to testnet
 algod_client = connect_to_algorand()
 
+# Note: The create_account() function was run twice to generate the two accounts below
+#       The first account was then funded with test Algos using an Algorand Faucet
+#       The second account was then funded with test Algos using an Algorand Faucet to ensure it can cover the transaction fee to opt in
+
 # Create first account and store keys
-private_key1 = "D5EQEWcJRSagWewKAae37ij1nnwGJYEzT2DNglGjKs/aVpbQm1DbSByGKmoA0vyJ2PkMaDJRnsPHVeYgOo7g/w=="
-address1 = "3JLJNUE3KDNUQHEGFJVABUX4RHMPSDDIGJIZ5Q6HKXTCAOUO4D73HBZSQ4"
+private_key1 = "wS7Wqa6WB61A4cVC6TrLXoemInJ/6RszmU5byuum65flRlHOTaFpkMiVPDiYeofj9hn30O8mnIjpq0rrh8SzKA=="
+address1 = "4VDFDTSNUFUZBSEVHQ4JQ6UH4P3BT56Q54TJZCHJVNFOXB6EWMUBDCCVQY"
 
 # Create second account and store keys
-private_key2 = "l0P1ZO9Z/fSScQ5kjJAcU4vDPABOIfAJfm3aS5LeSlaFqQdAc24JFKtwMqMMi3ENpqpntFoEXnPzoDRXqqqOrA=="
-address2 = "QWUQOQDTNYERJK3QGKRQZC3RBWTKUZ5ULICF447TUA2FPKVKR2WDGHITZM"
-
-# Send from account 1 to account two
-# send_transaction(private_key1, address1, address2, 1000000, algod_client)
-
-# Check blance on account1
-# check_account_balance(address1, algod_client)
-
-# Check blance on account2
-# check_account_balance(address2, algod_client)
+private_key2 = "PVSo4eVFkkRhV3ZAOiWvIOOOIp6zDICje55xG92U4+ECLiPkcOw4wXlOpU2XAKiyzaAC8u2FvuBFU+BcyltTHg=="
+address2 = "AIXCHZDQ5Q4MC6KOUVGZOAFIWLG2AAXS5WC35YCFKPQFZSS3KMPDQZTPYU"
 
 # create ASA and extract asset ID
-# asset_id_asa = create_asa(private_key2, address2, algod_client)
-asset_id_asa = "480159984"
+asset_id_asa = create_asa(private_key2, address2, algod_client)
+# asset_id_asa = "480159984"
 
 # opt-in to ASA
-# opt_in_to_asa(private_key1, address1, asset_id_asa, algod_client)
+opt_in_to_asa(private_key1, address1, asset_id_asa, algod_client)
 
+# List assets and assocaited balances of each account prior to the atomic transfer
 list_assets_and_balances(address1, algod_client)
-
 list_assets_and_balances(address2, algod_client)
 
+# Perform atomic transfer
 atomic_transfer(algod_client, private_key1, address1,
                 private_key2, address2, asset_id_asa)
 
+# List assets and assocaited balances of each account prior to the atomic transfer
 list_assets_and_balances(address1, algod_client)
-
 list_assets_and_balances(address2, algod_client)
+
+############################## End ##############################
