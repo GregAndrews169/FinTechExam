@@ -44,7 +44,7 @@ def create_asa(creator_private_key, creator_address, algod_client):
         # The address creating the UCTZAR and responsible for signing the transaction.
         sender=creator_address,
         sp=params,
-        total=15,
+        total=10,
         decimals=2,
         default_frozen=False,
         unit_name="UCTZAR",  # Example unit name, change as needed
@@ -156,7 +156,7 @@ def atomic_transfer(algod_client, sender_a_private_key, sender_a_address, sender
     # Fetch the suggested transaction parameters
     params = algod_client.suggested_params()
 
-    # Transaction A -> B: Algos
+    # Transaction1 : 5 Algos send from account A to account B
     tx1 = transaction.PaymentTxn(
         sender=sender_a_address,
         sp=params,
@@ -164,7 +164,7 @@ def atomic_transfer(algod_client, sender_a_private_key, sender_a_address, sender
         amt=5000000
     )
 
-    # Transaction B -> A: UCTZAR ASA
+    # Transaction1 : 2 UCTZAR send from account B to account A
     tx2 = transaction.AssetTransferTxn(
         sender=sender_b_address,
         sp=params,
@@ -181,11 +181,16 @@ def atomic_transfer(algod_client, sender_a_private_key, sender_a_address, sender
     atc.add_transaction(tws1)
     atc.add_transaction(tws2)
 
-    # Execute the atomic group of transactions
-    result = atc.execute(algod_client, 4)
-
-    # Return transaction IDs
-    return result.tx_ids  # If result.tx_ids is a list of txid strings
+    try:
+        # Execute the atomic group of transactions
+        result = atc.execute(algod_client, 4)
+        print("Atomic transaction successful. Transaction IDs:")
+        for tx_id in result.tx_ids:
+            print(tx_id)
+        return result.tx_ids
+    except Exception as e:
+        print("An error occurred during the atomic transfer:", e)
+        return None
 ########################################################################################################################
 
 
