@@ -1,8 +1,6 @@
 ########## Module imports ##########
-from algosdk import account
 from algosdk.v2client import algod
 from algosdk import transaction
-from algosdk.atomic_transaction_composer import AtomicTransactionComposer, TransactionWithSigner, AccountTransactionSigner
 ##########
 
 
@@ -33,7 +31,7 @@ def create_asa(creator_private_key, creator_address, algod_client):
         sender=creator_address,
         sp=params,
         total=100,  # The single NFT can be divided into 100 shares
-        # Should be equal to the logarithm (base 10) of the total number of units as per algorand fractional NFT standards
+        # The number of decimals should be equal to the logarithm (base 10) of the total number of units as per algorand fractional NFT standards
         decimals=2,
         default_frozen=False,
         unit_name="FNFT",
@@ -87,12 +85,12 @@ def opt_in_to_asa(account_private_key, account_address, asset_id, algod_client):
     # Submit the transaction
     txid = algod_client.send_transaction(signed_txn)
     print(
-        f"Sent opt-in transaction for ASA (Asset ID: {asset_id}) with txID: {txid}")
+        f"Sent opt-in transaction for Fractional NFT (Asset ID: {asset_id}) with txID: {txid}")
 
     # Wait for confirmation
     try:
         txn_result = transaction.wait_for_confirmation(algod_client, txid, 4)
-        print(f"Opt-in to ASA (Asset ID: {asset_id}) successful.")
+        print(f"Opt-in to Fractional NFT (Asset ID: {asset_id}) successful.")
     except Exception as e:
         print(
             f"An error occurred while confirming the opt-in transaction for ASA (Asset ID: {asset_id}).")
@@ -113,7 +111,6 @@ def send_nft(sender_private_key, sender_address, receiver_address, asset_id, alg
         sender=sender_address,
         sp=params,
         receiver=receiver_address,
-        # Since the decimals are 1, this is the smallest unit of the asset thus the 1 here actually represents a fraction of 0.1
         amt=10,  # Send 10 out of the 100 shares which represents a 0.1 fraction
         index=asset_id  # The ID of the ASA (NFT) to send
     )
@@ -156,7 +153,7 @@ def nft_existance_checker(account_address, fractional_nft_asset_id, algod_client
             nft_balance = next(
                 asset['amount'] for asset in assets if asset['asset-id'] == fractional_nft_asset_id)
             print(
-                f"{account_address} holds {nft_balance} units of the fractional NFT (Asset ID: {fractional_nft_asset_id}).")
+                f"{account_address} holds {nft_balance / 100} of the fractional NFT (Asset ID: {fractional_nft_asset_id}).")
         else:
             print(
                 f"{account_address} does not hold any units of the fractional NFT (Asset ID: {fractional_nft_asset_id}).")
@@ -172,6 +169,8 @@ def nft_existance_checker(account_address, fractional_nft_asset_id, algod_client
 ############################## Execution of functions ##############################
 
 ###### Required Accounts ######
+
+# Note: Four accounts are created and funded using the Algorand faucet with test Algos to cover required fees
 
 # NFT creator account
 NFT_Creator_address = "J4NQXH3IGGJGHNVMMF6DUJQSIQ5BBJXIEG7O7U4A5CADT4SUW2UJ3Y63AA"
@@ -198,7 +197,7 @@ algod_client = connect_to_algorand()
 asset_id_asa = create_asa(NFT_Creator_private_key,
                           NFT_Creator_address, algod_client)
 
-# Check for existance of Fractional NFT and if present list amount
+# Check for existance of Fractional NFT prior to opting in
 nft_existance_checker(NFT_reciever_address_1, asset_id_asa, algod_client)
 nft_existance_checker(NFT_reciever_address_2, asset_id_asa, algod_client)
 nft_existance_checker(NFT_reciever_address_3, asset_id_asa, algod_client)
@@ -228,7 +227,9 @@ send_nft(NFT_Creator_private_key, NFT_Creator_address,
          NFT_reciever_address_3, asset_id_asa, algod_client)
 
 
-# Check for existance of Fractional NFT and if present list amount
+# Check for existance of Fractional NFT after transaction and list amount
 nft_existance_checker(NFT_reciever_address_1, asset_id_asa, algod_client)
 nft_existance_checker(NFT_reciever_address_2, asset_id_asa, algod_client)
 nft_existance_checker(NFT_reciever_address_3, asset_id_asa, algod_client)
+
+############################## End ##############################
