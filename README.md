@@ -47,7 +47,6 @@ For `atomic_transfer.py`:
 
 ```bash
 python3 atomic_transfer.py
-For fractional_nft_algorand.py:
 ```
 
 For `fractional_nft_algorand.py`:
