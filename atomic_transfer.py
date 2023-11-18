@@ -25,13 +25,13 @@ def create_account():
     # Generate a new account
     private_key, address = account.generate_account()
 
-    # Output the address, private key, and mnemonic for the account
+    # Output the address and private key for the account
     print("Your new account address:", address)
     print("Your private key:", private_key)
 
     return private_key, address
 
-########## Function to Create ASA ##########
+########## Function to Create UCTZAR ##########
 
 
 def create_asa(creator_private_key, creator_address, algod_client):
@@ -39,15 +39,16 @@ def create_asa(creator_private_key, creator_address, algod_client):
     # Get the suggested transaction parameters from the network
     params = algod_client.suggested_params()
 
-    # Construct the ASA creation transaction with the parameters provided
+    # UCTZAR creation transaction
     txn = transaction.AssetConfigTxn(
+
         # The address creating the UCTZAR and responsible for signing the transaction.
         sender=creator_address,
         sp=params,
-        total=10,
+        total=10,  # Total supply of UCTZAR
         decimals=2,
-        default_frozen=False,
-        unit_name="UCTZAR",  # Example unit name, change as needed
+        default_frozen=False,  # Asset should not be frozen
+        unit_name="UCTZAR",
         asset_name="UCTZAR",
         manager=creator_address,
         reserve=None,  # No reserve address
@@ -62,7 +63,7 @@ def create_asa(creator_private_key, creator_address, algod_client):
 
     # Send the transaction to the Algorand network
     txid = algod_client.send_transaction(signed_txn)
-    print(f"Sent NFT creation transaction with txID: {txid}")
+    print(f"Sent UCTZAR creation transaction with txID: {txid}")
 
     # Wait for the transaction to be confirmed by the network
     try:
@@ -85,9 +86,9 @@ def opt_in_to_asa(account_private_key, account_address, asset_id, algod_client):
 
     # Create an asset transfer transaction with amount 0 - this is the opt-in transaction
     txn = transaction.AssetTransferTxn(
-        sender=account_address,
+        sender=account_address,  # This is the account opting in
         sp=params,
-        receiver=account_address,
+        receiver=account_address,  # This is the account opting in
         amt=0,
         index=asset_id  # The ID of the ASA to opt in to
     )
@@ -98,7 +99,7 @@ def opt_in_to_asa(account_private_key, account_address, asset_id, algod_client):
     # Send the transaction
     txid = algod_client.send_transaction(signed_txn)
     print(
-        f"Sent opt-in transaction for ASA (Asset ID: {asset_id}) with txID: {txid}")
+        f"Sent opt-in transaction for UCTZAR (Asset ID: {asset_id}) with txID: {txid}")
 
     # Wait for confirmation
     try:
@@ -111,32 +112,32 @@ def opt_in_to_asa(account_private_key, account_address, asset_id, algod_client):
 
     return txid
 
-########## Function to List all assets and assocaited balances in a specific account ##########
+########## Function to list UCTZAR and Algo balances for a specific account ##########
 
 
-def list_assets_and_balances(account_address, algod_client):
+def list_assets_and_balances(account_address, specific_asset_id, algod_client):
     try:
         # Fetch account information
         account_info = algod_client.account_info(account_address)
 
         # Get Algos balance
-        algos_balance = account_info.get('amount')
-        # Convert microAlgos to Algos
-        print(f"Algos balance: {algos_balance / 1e6} Algos")
+        algos_balance = account_info.get('amount', 0)
+        print(f" - ALGO: Balance {algos_balance / 1e6} ")
 
-        # Check if account has other assets
-        if 'assets' in account_info:
-            assets = account_info['assets']
-            if assets:
-                print(f"Assets held by {account_address}:")
-                for asset in assets:
-                    asset_id = asset['asset-id']
-                    asset_balance = asset['amount']
-                    print(f" - Asset ID {asset_id}: Balance {asset_balance}")
-            else:
-                print("No other assets held by this account.")
-        else:
-            print("No assets information available for this account.")
+        # Check if account has the specific asset (UZTZAR)
+        assets = account_info.get('assets', [])
+        asset_found = False
+        for asset in assets:
+            if asset['asset-id'] == specific_asset_id:
+                asset_balance = asset['amount']
+                print(
+                    f" - UCTZAR: Balance {asset_balance}")
+                asset_found = True
+                break
+
+        if not asset_found:
+            print(
+                f"No balance for Asset ID {specific_asset_id} held by this account.")
 
     except Exception as e:
         print("An error occurred while fetching account information.")
@@ -161,7 +162,7 @@ def atomic_transfer(algod_client, sender_a_private_key, sender_a_address, sender
         sender=sender_a_address,
         sp=params,
         receiver=sender_b_address,
-        amt=5000000
+        amt=5000000  # 5 Algos = 5000000 MicoAlgos
     )
 
     # Transaction1 : 2 UCTZAR send from account B to account A
@@ -195,38 +196,38 @@ def atomic_transfer(algod_client, sender_a_private_key, sender_a_address, sender
 
 
 ############################## Execution of functions ##############################
-# Connect to testnet
-algod_client = connect_to_algorand()
 
-# Note: The create_account() function was run twice to generate the two accounts below
-#       The first account was then funded with test Algos using an Algorand Faucet
-#       The second account was then funded with test Algos using an Algorand Faucet to ensure it can cover the transaction fee to opt in
+# Note: Use create_account() function to generate the two accounts
+#       The first account must be funded with test Algos using an Algorand Faucet to allow for the Algo transfer and cover associated transaction fees
+#       The second account must be funded with test Algos using an Algorand Faucet to ensure it can cover the transaction fee to to create the ASA and other assocaited transaction fees
 
-# Create first account and store keys
+# Account A: Sender of Algos and Reciever of UCTZAR
 private_key1 = "wS7Wqa6WB61A4cVC6TrLXoemInJ/6RszmU5byuum65flRlHOTaFpkMiVPDiYeofj9hn30O8mnIjpq0rrh8SzKA=="
 address1 = "4VDFDTSNUFUZBSEVHQ4JQ6UH4P3BT56Q54TJZCHJVNFOXB6EWMUBDCCVQY"
 
-# Create second account and store keys
+# Account B: Creator and sender of UCTZAR; Reciever of Algos
 private_key2 = "PVSo4eVFkkRhV3ZAOiWvIOOOIp6zDICje55xG92U4+ECLiPkcOw4wXlOpU2XAKiyzaAC8u2FvuBFU+BcyltTHg=="
 address2 = "AIXCHZDQ5Q4MC6KOUVGZOAFIWLG2AAXS5WC35YCFKPQFZSS3KMPDQZTPYU"
 
-# create ASA and extract asset ID
+# Connect to testnet
+algod_client = connect_to_algorand()
+
+# create UCTZAR and extract asset ID
 asset_id_asa = create_asa(private_key2, address2, algod_client)
 
-
-# opt-in to ASA referncing the asset by asset ID
+# opt-in to UCTZAR referncing the asset by asset ID
 opt_in_to_asa(private_key1, address1, asset_id_asa, algod_client)
 
-# List assets and assocaited balances of each account prior to the atomic transfer
-list_assets_and_balances(address1, algod_client)
-list_assets_and_balances(address2, algod_client)
+# List ALGOs and UCTZAR assocaited balances of each account prior to the atomic transfer
+list_assets_and_balances(address1, asset_id_asa, algod_client)
+list_assets_and_balances(address2, asset_id_asa, algod_client)
 
 # Perform atomic transfer
 atomic_transfer(algod_client, private_key1, address1,
                 private_key2, address2, asset_id_asa)
 
-# List assets and assocaited balances of each account prior to the atomic transfer
-list_assets_and_balances(address1, algod_client)
-list_assets_and_balances(address2, algod_client)
+# List ALGOs and UCTZAR assocaited balances of each account prior to the atomic transfer
+list_assets_and_balances(address1, asset_id_asa, algod_client)
+list_assets_and_balances(address2, asset_id_asa, algod_client)
 
 ############################## End ##############################
